@@ -7,16 +7,18 @@
  *  Updated Feb 2022 - Dan McGann
  */
 #pragma once
-
-#include <gtsam/base/DerivedValue.h>
 #include <gtsam/base/Lie.h>
+#include <gtsam/base/Matrix.h>
 
 namespace vertigo {
 
 /**
  * SwitchVariableLinear is a wrapper around double to allow it to be a Lie type
  */
-struct SwitchVariableLinear : public DerivedValue<SwitchVariableLinear> {
+struct SwitchVariableLinear {
+  /** TYPES **/
+  enum { dimension = 1 };
+
   /** default constructor */
   SwitchVariableLinear() : d_(0.0){};
 
@@ -45,19 +47,23 @@ struct SwitchVariableLinear : public DerivedValue<SwitchVariableLinear> {
   inline static size_t Dim() { return 1; }
 
   /** Update the SwitchVariableLinear with a tangent space update */
-  inline SwitchVariableLinear retract(const Vector& v) const {
+  inline SwitchVariableLinear retract(const gtsam::Vector& v, gtsam::OptionalJacobian<1, 1> H = boost::none) const {
     double x = value() + v(0);
-
-    if (x > 1.0)
+    if (x > 1.0) {
       x = 1.0;
-    else if (x < 0.0)
+    } else if (x < 0.0) {
       x = 0.0;
+    }
+
+    if (H) *H = gtsam::Matrix::Identity(1, 1);
 
     return SwitchVariableLinear(x);
   }
 
   /** @return the local coordinates of another object */
-  inline Vector localCoordinates(const SwitchVariableLinear& t2) const { return Vector_(1, (t2.value() - value())); }
+  inline gtsam::Vector localCoordinates(const SwitchVariableLinear& t2) const {
+    return (gtsam::Vector(1) << (t2.value() - value())).finished();
+  }
 
   // Group requirements
 
@@ -68,10 +74,10 @@ struct SwitchVariableLinear : public DerivedValue<SwitchVariableLinear> {
   inline SwitchVariableLinear compose(const SwitchVariableLinear& p) const { return SwitchVariableLinear(d_ + p.d_); }
 
   /** between operation */
-  inline SwitchVariableLinear between(const SwitchVariableLinear& l2, boost::optional<Matrix&> H1 = boost::none,
-                                      boost::optional<Matrix&> H2 = boost::none) const {
-    if (H1) *H1 = -eye(1);
-    if (H2) *H2 = eye(1);
+  inline SwitchVariableLinear between(const SwitchVariableLinear& l2, gtsam::OptionalJacobian<1, 1> H1 = boost::none,
+                                      gtsam::OptionalJacobian<1, 1> H2 = boost::none) const {
+    if (H1) *H1 = -gtsam::Matrix::Identity(1, 1);
+    if (H2) *H2 = gtsam::Matrix::Identity(1, 1);
     return SwitchVariableLinear(l2.value() - value());
   }
 
@@ -81,12 +87,27 @@ struct SwitchVariableLinear : public DerivedValue<SwitchVariableLinear> {
   // Lie functions
 
   /** Expmap around identity */
-  static inline SwitchVariableLinear Expmap(const Vector& v) { return SwitchVariableLinear(v(0)); }
+  static inline SwitchVariableLinear Expmap(const Vector& v, gtsam::OptionalJacobian<1, 1> H = boost::none) {
+    if (H) *H = gtsam::Matrix::Identity(1, 1);  // TODO (dan) is this correct
+    return SwitchVariableLinear(v(0));
+  }
 
   /** Logmap around identity - just returns with default cast back */
-  static inline Vector Logmap(const SwitchVariableLinear& p) { return Vector_(1, p.value()); }
+  static inline Vector Logmap(const SwitchVariableLinear& p, gtsam::OptionalJacobian<1, 1> H = boost::none) {
+    if (H) *H = gtsam::Matrix::Identity(1, 1);  // TODO (dan) is this correct
+    return (gtsam::Vector(1) << p.value()).finished();
+  }
 
  private:
   double d_;
 };
 }  // namespace vertigo
+
+namespace gtsam {
+// Define GTSAM traits
+template <>
+struct traits<vertigo::SwitchVariableLinear> : public gtsam::internal::LieGroup<vertigo::SwitchVariableLinear> {};
+
+template <>
+struct traits<const vertigo::SwitchVariableLinear> : public gtsam::internal::LieGroup<vertigo::SwitchVariableLinear> {};
+}  // namespace gtsam

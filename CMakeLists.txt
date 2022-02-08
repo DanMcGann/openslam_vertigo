@@ -7,7 +7,4 @@ include_directories(${GTSAM_INCLUDE_DIR})
 # Vertigo GTSAM Switchable constraints library
 add_library(vertigo INTERFACE)
 target_link_libraries(vertigo INTERFACE gtsam)
-target_include_directories(exp_runner INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-
-# Build examples
-add_subdirectory(examples)
+target_include_directories(vertigo INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
