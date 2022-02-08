@@ -1,11 +1,11 @@
 #pragma once
 
-#include "sys/time.h"
 #include <map>
 #include <string>
 
+#include "sys/time.h"
 
-int timeval_subtract (timeval *result, timeval *x, timeval *y);
+int timeval_subtract(timeval *result, timeval *x, timeval *y);
 void startTimer();
 double stopTimer();
 
@@ -29,32 +29,30 @@ double startTimeMeasure();
 */
 double stopTimeMeasure(double t1);
 
-
 // ===============================================
-class Timer
-{
-  public:
-    Timer() : _active(true) {};
+class Timer {
+ public:
+  Timer() : _active(true){};
 
-    void tic(const std::string &name);
-    double toc(const std::string &name);
-    double get(const std::string &name);
-    void reset(const std::string &name);
-    void create(const std::string &name);
+  void tic(const std::string &name);
+  double toc(const std::string &name);
+  double get(const std::string &name);
+  void reset(const std::string &name);
+  void create(const std::string &name);
 
-    void print(std::ostream &os);
+  void print(std::ostream &os);
 
-    void active(bool a) { _active = a;};
-    bool active() { return _active; };
+  void active(bool a) { _active = a; };
+  bool active() { return _active; };
 
-  protected:
-    bool _active;
+ protected:
+  bool _active;
 
-    struct Measurement {
-      double startTime;
-      double overallTime;
-      std::string name;
-    };
+  struct Measurement {
+    double startTime;
+    double overallTime;
+    std::string name;
+  };
 
-    std::map<std::string, Measurement> measurements;
+  std::map<std::string, Measurement> measurements;
 };
