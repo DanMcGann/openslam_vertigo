@@ -47,7 +47,8 @@ struct SwitchVariableLinear {
   inline static size_t Dim() { return 1; }
 
   /** Update the SwitchVariableLinear with a tangent space update */
-  inline SwitchVariableLinear retract(const gtsam::Vector& v, gtsam::OptionalJacobian<1, 1> H = boost::none) const {
+  inline SwitchVariableLinear retract(const gtsam::Vector& v, gtsam::OptionalJacobian<1, 1> Horigin = boost::none,
+                                      gtsam::OptionalJacobian<1, 1> Hv = boost::none) const {
     double x = value() + v(0);
     if (x > 1.0) {
       x = 1.0;
@@ -55,13 +56,18 @@ struct SwitchVariableLinear {
       x = 0.0;
     }
 
-    if (H) *H = gtsam::Matrix::Identity(1, 1);
+    if (Horigin) *Horigin = gtsam::Matrix::Identity(1, 1);
+    if (Hv) *Hv = gtsam::Matrix::Identity(1, 1);
 
     return SwitchVariableLinear(x);
   }
 
   /** @return the local coordinates of another object */
-  inline gtsam::Vector localCoordinates(const SwitchVariableLinear& t2) const {
+  inline gtsam::Vector localCoordinates(const SwitchVariableLinear& t2,
+                                        gtsam::OptionalJacobian<1, 1> Horigin = boost::none,
+                                        gtsam::OptionalJacobian<1, 1> Hv = boost::none) const {
+    if (Horigin) *Horigin = -gtsam::Matrix::Identity(1, 1);
+    if (Hv) *Hv = gtsam::Matrix::Identity(1, 1);
     return (gtsam::Vector(1) << (t2.value() - value())).finished();
   }
 
